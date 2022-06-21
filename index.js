@@ -1,7 +1,17 @@
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
+const connection = require("./database/connection");
+const games = require("./database/Games");
+const Games = require("./database/Games");
 
+// Active database/sequelize
+connection.
+        authenticate()
+        .then(() => {console.log("Database started")})
+        .catch((err) => {console.log(err)})
+
+// Active body-parser
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
@@ -50,10 +60,16 @@ app.get("/game/:id", (req, res) => {
 })
 
 app.post("/game", (req, res) => {
-    var {name, year, price} = req.body;
-
-    if(name != undefined){
-        if(typeof price != "number" || typeof year != "number"){
+    var {name, year, developedBy, description, genre} = req.body;
+    Games.create({
+        name: name,
+        year: year,
+        developedBy: developedBy,
+        description: description,
+        genre: genre
+    })
+    if(name != undefined || developedBy != undefined || description != undefined || genre != undefined){
+        if(typeof year != "number"){
             res.sendStatus(400);
         }else{
             DB.games.push({
@@ -112,5 +128,5 @@ app.put("/game/:id", (req, res) => {
 })
 
 app.listen(3000, () => {
-    console.log("API RODANDO!")
+    console.log("Server started!")
 });
