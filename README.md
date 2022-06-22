@@ -1,4 +1,5 @@
-"# crud-games" 
+"# API-Games" 
 
-This is my first API. It went created all the functions with NodeJs, using the express and body-parser library. To started i used an array as database, but i'm working in it to update to a real database using SQL and sequelize library.
+This is my first API. It went created all the functions with NodeJs, using the express, body-parser and sequelize library.
 
+This API should work as a administrative panel, so then you have the functions for list, add, delete and update a games database.

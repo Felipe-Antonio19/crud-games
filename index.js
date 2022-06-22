@@ -2,7 +2,6 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const connection = require("./database/connection");
-const games = require("./database/Games");
 const Games = require("./database/Games");
 
 // Active database/sequelize
@@ -15,68 +14,47 @@ connection.
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
-var DB = {
-    games:[
-        {
-            id: 23,
-            name: "League of legends",
-            year: 2009,
-            price: 0
-        },
-        {
-            id: 15,
-            name: "Counter-strike global offensive",
-            year: 2013,
-            price: 30
-        },
-        {
-            id: 30,
-            name: "Minecraft",
-            year: 2012,
-            price: 40
-        },
-    ]
-}
-
+// Routes
 app.get("/games", (req, res) => {
     res.statusCode = 200;
-    res.json(DB.games);
+    Games.findAll({raw: true}).then((games) => {
+        res.send(games);
+    })
 });
 
-app.get("/game/:id", (req, res) => {
+app.get("/game/:id", async (req, res) => {
     if(isNaN(req.params.id)){
         res.sendStatus(400);
     }else{
         var id = parseInt(req.params.id);
-        var game = DB.games.find(x => x.id == id)
-        
-        if(game == undefined){
-            res.sendStatus(404);
+        var game = await Games.findOne({where:{id:id}});
+        if(game != null){
+            Games.findOne({
+                where:{
+                    id: id
+                }
+            }).then((game) => {
+                res.statusCode = 200;
+                res.send(game);
+            }) 
         }else{
-            res.statusCode = 200;
-            res.json(game)
-        }
-    }
-})
+            res.sendStatus(404);
+        }    
+}}
+);
 
 app.post("/game", (req, res) => {
     var {name, year, developedBy, description, genre} = req.body;
-    Games.create({
-        name: name,
-        year: year,
-        developedBy: developedBy,
-        description: description,
-        genre: genre
-    })
     if(name != undefined || developedBy != undefined || description != undefined || genre != undefined){
         if(typeof year != "number"){
             res.sendStatus(400);
         }else{
-            DB.games.push({
-                id: 100,
-                name,
-                year,
-                price
+            Games.create({
+                name: name,
+                year: year,
+                developedBy: developedBy,
+                description: description,
+                genre: genre
             })
             res.sendStatus(200);
         }
@@ -85,48 +63,56 @@ app.post("/game", (req, res) => {
     }
 });
 
-app.delete("/game/:id", (req, res) => {
+app.delete("/game/:id", async (req, res) => {
     if(isNaN(req.params.id)){
         res.sendStatus(400);
     }else{
-        var id = parseInt(req.params.id);
-        var index = DB.games.findIndex(x => x.id == id);
-        if(index == -1){
+        var id = (req.params.id);
+        var game = await Games.findOne({where:{id:id}})
+        if(game == null){
             res.sendStatus(404);
         }else{
-            DB.games.splice(index,1);
-            res.sendStatus(200);
-        }
-    }
-})
+            Games.destroy({
+                where:{
+                    id: id
+                }
+            }).then(() => {
+                res.statusCode = 200;
+                res.send("Game deleted")
+            })
+    }    
+}
+});
 
-app.put("/game/:id", (req, res) => {
+app.put("/game/:id", async (req, res) => {
     if(isNaN(req.params.id)){
-        res.sendStatus(400);
+        console.log("Is not a number")
     }else{
-        var id = parseInt(req.params.id);
-        var game = DB.games.find(x => x.id == id)
-        
-        if(game == undefined){
+        var id = req.params.id;
+        var game = await Games.findOne({where:{id:id}});
+        if(game == null){
             res.sendStatus(404);
         }else{
-            var {name, year, price} = req.body;
+            var {name, description} = req.body;
             
-            if(name != undefined){
-                game.name = name;
-            }
-            if(year != undefined){
-                game.year = year;
-            }
-            if(price != undefined){
-                game.price = price;
-
-            res.sendStatus(200);
+            if(name != null){
+                Games.update({name: name},{
+                    where:{id:id}
+                }).then(() => {
+                    res.send("The new name is " + name)
+                });
+            if(description != null){
+                Games.update({description: description},{
+                    where:{id:id}
+                }).then(() => {
+                    res.send("The new description is " + description);
+                });
             }
         }
     }
-})
+}});
 
+// Server starter
 app.listen(3000, () => {
     console.log("Server started!")
-});
+})
